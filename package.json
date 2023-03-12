@@ -7,7 +7,7 @@
     "build": "rm -rf build && tsc",
     "start": "node build/index.js",
     "test": "node --test",
-    "prettier:write": "prettier --write .",
+    "prettier:write": "yarn prettier --write .",
     "prettier:check": "yarn prettier --check ."
   },
   "dependencies": {
