@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "scripts": {
+    "start": "rm -rf build && tsc && node build/index.js"
+  },
   "dependencies": {
     "@types/node": "^18.15.0",
     "@types/prompts": "^2.4.3",
