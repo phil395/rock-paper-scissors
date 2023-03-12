@@ -43,6 +43,7 @@ export class Game {
     this.showMessage(
       "Available moves:\n",
       ...this.buildMovesInfo(),
+      "0 - exit\n",
       "? - help\n"
     );
 
@@ -50,6 +51,9 @@ export class Game {
     if (playerMoveCode === "?") {
       this.table.showTable();
       this.newGameHandler();
+      return;
+    }
+    if (playerMoveCode === "0") {
       return;
     }
     this.playerMove = this.moves[parseInt(playerMoveCode) - 1];
@@ -68,7 +72,7 @@ export class Game {
           return true;
         }
         const num = parseInt(value);
-        if (num >= 1 && num <= this.moves.length) {
+        if (num >= 0 && num <= this.moves.length) {
           return true;
         }
         return `the value must be in the range from 1 to ${this.moves.length} or it must be "?"`;
