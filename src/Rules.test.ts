@@ -4,7 +4,8 @@ import test from "node:test";
 import { Rules } from "./Rules";
 
 test("Rules.defineWinner() with 3 items", (t) => {
-  const rules = new Rules(["A", "B", "C"]);
+  const rules = new Rules();
+  rules.setMoves(["A", "B", "C"]);
   strictEqual(rules.getWinner("A", "B"), "B");
   strictEqual(rules.getWinner("A", "C"), "A");
   strictEqual(rules.getWinner("C", "B"), "C");
@@ -16,8 +17,8 @@ test("Rules.defineWinner() with 3 items", (t) => {
 });
 
 test("Rules.defineWinner() with 5 items", (t) => {
-  const rules = new Rules(["A", "B", "C", "D", "E"]);
-
+  const rules = new Rules();
+  rules.setMoves(["A", "B", "C", "D", "E"]);
   strictEqual(rules.getWinner("A", "B"), "B");
   strictEqual(rules.getWinner("C", "E"), "E");
   strictEqual(rules.getWinner("D", "A"), "A");
@@ -30,8 +31,8 @@ test("Rules.defineWinner() with 5 items", (t) => {
 });
 
 test("Rules.defineWinner() with 7 items", (t) => {
-  const rules = new Rules(["A", "B", "C", "D", "E", "F", "G"]);
-
+  const rules = new Rules();
+  rules.setMoves(["A", "B", "C", "D", "E", "F", "G"]);
   strictEqual(rules.getWinner("A", "C"), "C");
   strictEqual(rules.getWinner("A", "D"), "D");
   strictEqual(rules.getWinner("D", "E"), "E");

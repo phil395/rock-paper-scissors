@@ -1,9 +1,8 @@
-export class Rules {
-  private movesMap: Record<string, number>;
+import type { IRulesCreator } from "./interfaces";
 
-  constructor(private moves: readonly string[]) {
-    this.constructMap();
-  }
+export class Rules implements IRulesCreator {
+  private movesMap: Record<string, number>;
+  private moves: readonly string[];
 
   private constructMap(): void {
     this.movesMap = this.moves.reduce((map, move, index) => {
@@ -21,7 +20,12 @@ export class Rules {
     }
   }
 
-  public getWinnersList(move: string) {
+  public setMoves(moves: string[]) {
+    this.moves = moves;
+    this.constructMap();
+  }
+
+  public getWinnersList(move: string): Set<string> {
     this.validateInput(move);
     const { length } = this.moves;
     const moveIndex = this.movesMap[move];
