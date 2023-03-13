@@ -13,8 +13,8 @@ export class Rules implements IRulesCreator {
 
   private validateInput(moveA: string, moveB?: string): void {
     if (
-      typeof this.movesMap[moveA] === "undefined" ||
-      (moveB && typeof this.movesMap[moveB] === "undefined")
+      typeof this.movesMap?.[moveA] === "undefined" ||
+      (moveB && typeof this.movesMap?.[moveB] === "undefined")
     ) {
       throw new Error("Rules: Incorrect Move(s)");
     }
