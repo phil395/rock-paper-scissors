@@ -1,6 +1,6 @@
 # Rock paper scissors
 
-[![asciicast](https://asciinema.org/a/CZ6Cgb54wJeAwpDoX5JMmLEkz.svg)](https://asciinema.org/a/CZ6Cgb54wJeAwpDoX5JMmLEkz)
+[![asciicast](https://asciinema.org/a/oPOEfH2nI537jiFdES3kIGsJX.svg)](https://asciinema.org/a/oPOEfH2nI537jiFdES3kIGsJX)
 
 ## Installation
 
@@ -14,5 +14,3 @@ yarn build
 # run project
 yarn start
 ```
-
-
