@@ -1,4 +1,4 @@
-import { formatText } from "./utils";
+import { formatText } from "./utils/formatText";
 
 export const INCORRECT_INPUT_MSG = `
   ${formatText("Incorrectly passed arguments", { color: "red" })}

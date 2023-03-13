@@ -5,12 +5,17 @@ const colorMap = {
   blue: "34",
 } as const;
 
-interface FormatOptions {
+export interface IFormatTextOptions {
   color?: keyof typeof colorMap;
   bold?: boolean;
 }
 
-export const formatText = (text: string, options: FormatOptions): string => {
+export type FormatText = typeof formatText;
+
+export const formatText = (
+  text: string,
+  options: IFormatTextOptions
+): string => {
   const color = options.color ? colorMap[options.color] : "";
   const bold = options.bold ? "1" : "";
   const value = color && bold ? `${color};${bold}` : color || bold;
