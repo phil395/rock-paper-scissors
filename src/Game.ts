@@ -2,33 +2,41 @@ import prompts from "prompts";
 import { randomInt } from "node:crypto";
 import { promisify } from "node:util";
 
-import { ArgsParser } from "./ArgsParser";
-import { Authn } from "./Authn";
-import { Rules } from "./Rules";
-import { Table } from "./Table";
-
-import { INCORRECT_INPUT_MSG } from "./messages";
-import { formatText } from "./utils";
+import type {
+  IHmacGenerator,
+  IMovesProvider,
+  IOutput,
+  IRulesCreator,
+  IRulesTable,
+} from "./interfaces";
 
 export class Game {
-  private parser: ArgsParser = new ArgsParser();
-  private authn: Authn = new Authn("SHA3-256");
-  private rules: Rules;
-  private table: Table;
-  private moves: string[];
+  private moves: readonly string[];
   private computerMove: string;
   private playerMove: string;
 
-  constructor() {
-    const moves = this.parser.parseArgs();
-    if (!moves) {
-      this.showMessage(INCORRECT_INPUT_MSG);
-      return;
+  constructor(
+    private movesProvider: IMovesProvider,
+    private output: IOutput,
+    private rules: IRulesCreator,
+    private rulesTable: IRulesTable,
+    private hmacGenerator: IHmacGenerator,
+    private getAnswer: typeof prompts,
+    incorrectInputMsg: string
+  ) {
+    try {
+      const moves = this.movesProvider.get();
+      if (!moves) {
+        this.output.print(incorrectInputMsg);
+        return;
+      }
+      this.moves = moves;
+      this.rules.setMoves(moves);
+      this.rulesTable.set(moves, rules);
+      this.run();
+    } catch (error) {
+      this.errorHandler(error);
     }
-    this.moves = moves;
-    this.rules = new Rules(moves);
-    this.table = new Table(moves, this.rules);
-    this.run();
   }
 
   public async run() {
@@ -37,10 +45,11 @@ export class Game {
     );
     this.computerMove = this.moves[computerMoveCode];
 
-    await this.authn.generateHmac(this.computerMove);
+    await this.hmacGenerator.generateHmac(this.computerMove);
+    const [hmac] = this.hmacGenerator.getResult();
 
-    this.showMessage("HMAC:", this.authn.hmac);
-    this.showMessage(
+    this.output.print("HMAC:", hmac);
+    this.output.print(
       "Available moves:\n",
       ...this.buildMovesInfo(),
       "0 - exit\n",
@@ -49,7 +58,7 @@ export class Game {
 
     const playerMoveCode = await this.getPlayerMoveCode();
     if (playerMoveCode === "?") {
-      this.table.showTable();
+      this.rulesTable.print();
       this.newGameHandler();
       return;
     }
@@ -63,7 +72,7 @@ export class Game {
   }
 
   private async getPlayerMoveCode(): Promise<string> {
-    const { playerMoveCode } = await prompts({
+    const { playerMoveCode } = await this.getAnswer({
       name: "playerMoveCode",
       type: "text",
       message: "Enter your move:",
@@ -75,31 +84,39 @@ export class Game {
         if (num >= 0 && num <= this.moves.length) {
           return true;
         }
-        return `the value must be in the range from 1 to ${this.moves.length} or it must be "?"`;
+        return `the value must be in the range from 0 to ${this.moves.length} or it must be "?"`;
       },
     });
     return playerMoveCode as string;
   }
 
   private showResult(): void {
-    this.showMessage("Your move:", this.playerMove);
-    this.showMessage("Computer move:", this.computerMove);
-    const winner = this.rules.getWinner(this.computerMove, this.playerMove);
-    if (!winner) {
-      this.showMessage(formatText("Draw", { color: "yellow", bold: true }));
-      return;
+    // print moves
+    this.output.print("Your move:", this.playerMove);
+    this.output.print("Computer move:", this.computerMove);
+
+    // define winner and print
+    const winnerMove = this.rules.getWinner(this.computerMove, this.playerMove);
+
+    switch (winnerMove) {
+      case this.playerMove:
+        this.output.printF("You win!", { color: "green", bold: true });
+        break;
+      case this.computerMove:
+        this.output.printF("You lose", { color: "red", bold: true });
+        break;
+      default:
+        this.output.printF("Draw", { color: "yellow", bold: true });
     }
-    if (winner === this.playerMove) {
-      this.showMessage(formatText("You win!", { color: "green", bold: true }));
-      return;
-    }
-    this.showMessage(formatText("You lose", { color: "red", bold: true }));
-    this.showMessage("KEY:", this.authn.key);
-    this.showMessage("Algorithm:", this.authn.algorithm);
+
+    // print hmac things
+    const [_, hmacKey, hmacAlgorithm] = this.hmacGenerator.getResult();
+    this.output.print("KEY:", hmacKey);
+    this.output.print("Algorithm:", hmacAlgorithm);
   }
 
   private async askAboutNewGame() {
-    const { startNewGame } = await prompts({
+    const { startNewGame } = await this.getAnswer({
       name: "startNewGame",
       type: "confirm",
       message: "Do you want to continue the game:",
@@ -115,11 +132,11 @@ export class Game {
     }
   }
 
-  private showMessage(...msgs: string[]): void {
-    console.log(...msgs);
-  }
-
   private buildMovesInfo(): string[] {
     return this.moves.map((move, index) => `${index + 1} - ${move}\n`);
+  }
+
+  private errorHandler(error: unknown): void {
+    this.output.print(new Error("Something broke", { cause: error }));
   }
 }
