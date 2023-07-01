@@ -1,4 +1,3 @@
-import prompts from "prompts";
 import { randomInt } from "node:crypto";
 import { promisify } from "node:util";
 
@@ -6,8 +5,10 @@ import type {
   IHmacGenerator,
   IMovesProvider,
   IOutput,
+  IPrompt,
   IRulesCreator,
   IRulesTable,
+  IMenu,
 } from "./interfaces";
 
 export class Game {
@@ -17,11 +18,12 @@ export class Game {
 
   constructor(
     private movesProvider: IMovesProvider,
+    private menu: IMenu,
+    private prompt: IPrompt,
     private output: IOutput,
     private rules: IRulesCreator,
     private rulesTable: IRulesTable,
     private hmacGenerator: IHmacGenerator,
-    private getAnswer: typeof prompts,
     incorrectInputMsg: string
   ) {
     try {
@@ -33,6 +35,8 @@ export class Game {
       this.moves = moves;
       this.rules.setMoves(moves);
       this.rulesTable.set(moves, rules);
+      this.menu.setMoves(moves);
+      this.prompt.setMoves(moves);
       this.run();
     } catch (error) {
       this.errorHandler(error);
@@ -47,16 +51,11 @@ export class Game {
 
     await this.hmacGenerator.generateHmac(this.computerMove);
     const [hmac] = this.hmacGenerator.getResult();
-
     this.output.print("HMAC:", hmac);
-    this.output.print(
-      "Available moves:\n",
-      ...this.buildMovesInfo(),
-      "0 - exit\n",
-      "? - help\n"
-    );
 
-    const playerMoveCode = await this.getPlayerMoveCode();
+    this.menu.show();
+
+    const playerMoveCode = await this.prompt.getPlayerMoveCode();
     if (playerMoveCode === "?") {
       this.rulesTable.print();
       this.newGameHandler();
@@ -69,25 +68,6 @@ export class Game {
 
     this.showResult();
     this.newGameHandler();
-  }
-
-  private async getPlayerMoveCode(): Promise<string> {
-    const { playerMoveCode } = await this.getAnswer({
-      name: "playerMoveCode",
-      type: "text",
-      message: "Enter your move:",
-      validate: (value) => {
-        if (value === "?") {
-          return true;
-        }
-        const num = parseInt(value);
-        if (num >= 0 && num <= this.moves.length) {
-          return true;
-        }
-        return `the value must be in the range from 0 to ${this.moves.length} or it must be "?"`;
-      },
-    });
-    return playerMoveCode as string;
   }
 
   private showResult(): void {
@@ -115,25 +95,11 @@ export class Game {
     this.output.print("Algorithm:", hmacAlgorithm);
   }
 
-  private async askAboutNewGame() {
-    const { startNewGame } = await this.getAnswer({
-      name: "startNewGame",
-      type: "confirm",
-      message: "Do you want to continue the game:",
-      initial: false,
-    });
-    return startNewGame as boolean;
-  }
-
   private async newGameHandler() {
-    const startNewGame = await this.askAboutNewGame();
+    const startNewGame = await this.prompt.askAboutNewGame();
     if (startNewGame) {
       this.run();
     }
-  }
-
-  private buildMovesInfo(): string[] {
-    return this.moves.map((move, index) => `${index + 1} - ${move}\n`);
   }
 
   private errorHandler(error: unknown): void {
